@@ -3,6 +3,7 @@
 import face_recognition
 import argparse
 import sys
+import os.path as path
 
 from PIL import Image
 from os.path import exists
@@ -20,6 +21,8 @@ def get_args():
                         help="Output height.")
     parser.add_argument('-p', '--padding', type=float, default=0.5,
                         help="Padding around face. Specified as fraction of wider dimension.")
+    parser.add_argument('-m', '--allow_multiple', default=False, action='store_true',
+                        help="Process multiple faces if found instead of throwing an error.")
     args = parser.parse_args()
 
     return args
@@ -84,6 +87,8 @@ def run():
     if not exists(args.source):
         raise ValueError("Source %s not found." % args.source)
 
+    target_base, target_ext = path.splitext(args.target)
+
     image = face_recognition.load_image_file(args.source)
 
     face_locations = face_recognition.face_locations(image)
@@ -93,6 +98,9 @@ def run():
 
     postfix = None
     if len(face_locations) > 1:
+        if not args.allow_multiple:
+            raise ValueError("Multiple faces (%d) found. " % len(face_locations) +
+                             "To generate multiple thumbnails, specify --allow_multiple .")
         postfix = 0
 
     for face_location in face_locations:
@@ -100,10 +108,6 @@ def run():
 
         erect = frect.expand_to_aspect(aspect)
         prect = erect.pad_ratio(padding)
-        
-        #print(frect)
-        #print(erect)
-        #print(prect)
 
         face_image = image[prect.top:prect.bottom,
                            prect.left:prect.right]
@@ -111,11 +115,11 @@ def run():
 
         output_file = args.target
         if postfix is not None:
-            output_file += "." + str(postfix)
+            output_file = target_base + "." + str(postfix) + target_ext
             postfix += 1
 
         pil_image.save(output_file)
-        print("wrote {}".format(output_file))
+        print("face at {} written to {}".format(face_location, output_file))
 
 try:
     run()
