@@ -8,6 +8,8 @@ import os.path as path
 from PIL import Image
 from os.path import exists
 
+models = set(['cnn', 'hog'])
+
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -23,6 +25,8 @@ def get_args():
                         help="Padding around face. Specified as fraction of wider dimension.")
     parser.add_argument('-m', '--allow_multiple', default=False, action='store_true',
                         help="Process multiple faces if found instead of throwing an error.")
+    parser.add_argument('--model', type=str, default='hog',
+                        help="Detection model to use. Options are 'hog' (fast) and 'cnn' (slow). See face_detection documentation for more details.")
     args = parser.parse_args()
 
     return args
@@ -84,6 +88,11 @@ def run():
     padding = args.padding
     aspect = width / height
 
+    model = args.model
+
+    if model not in models:
+        raise ValueError("Unknown model %s. Options are %s." % (model, str(models)))
+
     if not exists(args.source):
         raise ValueError("Source %s not found." % args.source)
 
@@ -91,7 +100,7 @@ def run():
 
     image = face_recognition.load_image_file(args.source)
 
-    face_locations = face_recognition.face_locations(image)
+    face_locations = face_recognition.face_locations(image, model=args.model)
 
     if len(face_locations) == 0:
         raise ValueError("No faces found.")
