@@ -8,6 +8,8 @@ import os.path as path
 from PIL import Image
 from os.path import exists
 
+models = set(['cnn', 'hog'])
+
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -87,6 +89,11 @@ def run():
     padding = args.padding
     aspect = width / height
 
+    model = args.model
+
+    if model not in models:
+        raise ValueError("Unknown model %s. Options are %s." % (model, str(models)))
+
     if not exists(args.source):
         raise ValueError("Source %s not found." % args.source)
 
@@ -94,10 +101,7 @@ def run():
 
     image = face_recognition.load_image_file(args.source)
 
-    face_locations = face_recognition.face_locations(
-        image,
-        model=args.model
-    )
+    face_locations = face_recognition.face_locations(image, model=args.model)
 
     if len(face_locations) == 0:
         raise ValueError("No faces found.")
