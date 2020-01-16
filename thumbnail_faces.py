@@ -23,6 +23,9 @@ def get_args():
                         help="Padding around face. Specified as fraction of wider dimension.")
     parser.add_argument('-m', '--allow_multiple', default=False, action='store_true',
                         help="Process multiple faces if found instead of throwing an error.")
+    parser.add_argument('--model', type=str, default='hog',
+                        help="Detection model of hog (default) or cnn (slow).")
+
     args = parser.parse_args()
 
     return args
@@ -91,7 +94,10 @@ def run():
 
     image = face_recognition.load_image_file(args.source)
 
-    face_locations = face_recognition.face_locations(image)
+    face_locations = face_recognition.face_locations(
+        image,
+        model=args.model
+    )
 
     if len(face_locations) == 0:
         raise ValueError("No faces found.")
